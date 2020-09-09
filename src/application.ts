@@ -1,5 +1,5 @@
 import express from "express";
-import database from "./components/database";
+import database from "./database";
 import cors from "cors";
 import bodyParser from "body-parser";
 import api from "./api";
