@@ -7,6 +7,13 @@ const routes = [
   {
     path: "/",
     component: () => import("../layouts/Main"),
+    children: [
+      {
+        path: "",
+        name: "to-do",
+        component: () => import("../pages/ToDo"),
+      },
+    ],
   },
 ];
 
