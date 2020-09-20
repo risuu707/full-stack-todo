@@ -5,7 +5,9 @@ import bodyParser from "body-parser";
 import api from "./api";
 
 const application = express();
-database.init().then();
+database.init().then(() => {
+  console.log('Database is Connected...')
+});
 application.use(cors());
 application.use(bodyParser.urlencoded({ extended: true }));
 application.use(bodyParser.json());
