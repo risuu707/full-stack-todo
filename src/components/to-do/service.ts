@@ -1,11 +1,12 @@
 import ToDoModel from "./model";
-const todoModel = new ToDoModel();
+const toDoModel = new ToDoModel();
 
 export default class ToDoService {
-  async fetch() {
-
+  async fetchToDos() {
+    return await toDoModel.fetchToDos()
   }
+
   async addToDo(task: string) {
-    return await todoModel.addToDo(task);
+    return await toDoModel.addToDo(task);
   }
 }

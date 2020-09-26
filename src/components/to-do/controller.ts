@@ -1,15 +1,16 @@
 import {Request, Response,} from 'express';
 import ToDoService from "./service";
-const todoService = new ToDoService();
+const toDoService = new ToDoService();
 
 export default class ToDoController {
-  async fetch(_request: Request, response: Response) {
-    response.send('Hello World');
+  async fetchToDos(_request: Request, response: Response) {
+    const toDos = await toDoService.fetchToDos();
+    response.json(toDos);
   }
-  async addToDo(request: Request, response: Response){
 
+  async addToDo(request: Request, response: Response){
     const { task } = request.body;
-    const newTask = await todoService.addToDo(task);
+    const newTask = await toDoService.addToDo(task);
     response.json(newTask);
   }
 }
