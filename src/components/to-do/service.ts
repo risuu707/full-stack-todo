@@ -6,6 +6,6 @@ export default class ToDoService {
 
   }
   async addToDo(task: string) {
-    await todoModel.addToDo(task);
+    return await todoModel.addToDo(task);
   }
 }

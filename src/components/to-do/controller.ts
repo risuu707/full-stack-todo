@@ -1,4 +1,4 @@
-import { Request, Response,  } from 'express';
+import {Request, Response,} from 'express';
 import ToDoService from "./service";
 const todoService = new ToDoService();
 
@@ -9,7 +9,7 @@ export default class ToDoController {
   async addToDo(request: Request, response: Response){
 
     const { task } = request.body;
-    await todoService.addToDo(task);
-    response.json(task);
+    const newTask = await todoService.addToDo(task);
+    response.json(newTask);
   }
 }
