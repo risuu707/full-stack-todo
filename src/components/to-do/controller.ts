@@ -13,4 +13,10 @@ export default class ToDoController {
     const newTask = await toDoService.addToDo(task);
     response.json(newTask);
   }
+
+  async deleteToDo(request: Request, response: Response){
+    const { id } = request.body;
+    const newToDos = await toDoService.deleteToDo(id);
+    response.json(newToDos);
+  }
 }

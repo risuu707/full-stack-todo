@@ -7,9 +7,14 @@ export default class ToDoModel {
         const entityManager = getManager();
         return await entityManager.find(Todo);
     }
-    
+
     async addToDo(task: string) {
         const entityManager = getManager();
         return await entityManager.save(Todo, {task});
+    }
+
+    async deleteToDo(id: number) {
+        const entityManager = getManager();
+        return await entityManager.delete(Todo, id);
     }
 }

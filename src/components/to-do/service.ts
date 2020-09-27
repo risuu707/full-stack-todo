@@ -9,4 +9,8 @@ export default class ToDoService {
   async addToDo(task: string) {
     return await toDoModel.addToDo(task);
   }
+
+  async deleteToDo(id: number) {
+    return await toDoModel.deleteToDo(id);
+  }
 }
