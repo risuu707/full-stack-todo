@@ -15,8 +15,14 @@ export default class ToDoController {
   }
 
   async deleteToDo(request: Request, response: Response){
-    const { id } = request.body;
+    const id = parseInt(request.params.id);
     const newToDos = await toDoService.deleteToDo(id);
     response.json(newToDos);
+  }
+
+  async updateToDo(request: Request, response: Response){
+    const { id, isCompleted } = request.body;
+    const updatedToDo = await toDoService.updateToDo({id, isCompleted});
+    response.json(updatedToDo);
   }
 }

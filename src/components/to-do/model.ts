@@ -17,4 +17,12 @@ export default class ToDoModel {
         const entityManager = getManager();
         return await entityManager.delete(Todo, id);
     }
+
+    async updateToDo(updatedToDo: {id: number, isCompleted: boolean}) {
+        const entityManager = getManager();
+        await entityManager.update(Todo,
+            updatedToDo.id,
+            {isCompleted: updatedToDo.isCompleted});
+        return this.fetchToDos();
+    }
 }

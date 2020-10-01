@@ -20,21 +20,22 @@
                 rounded
                 outlined
                 dense
+                v-model="searchInput"
               ></v-text-field>
             </v-toolbar>
             <v-divider class="mt-4"></v-divider>
             <v-toolbar dense flat>
               <v-row class="my-1" align="center">
                 <strong class="mx-4 success--text text--darken-2">
-                  Completed: 100
+                  Completed: {{ completedToDos.length }}
                 </strong>
                 <v-divider vertical></v-divider>
                 <strong class="mx-4 error--text text--darken-2">
-                  Pending: 100
+                  Pending: {{ inCompleteToDos.length }}
                 </strong>
                 <v-spacer></v-spacer>
                 <v-progress-circular
-                  :value="100"
+                  :value="progressBarPercent"
                   class="mr-2"
                   :color="100 === 100 ? 'success' : ''"
                 ></v-progress-circular>
@@ -45,32 +46,35 @@
               <template v-slot:default>
                 <thead>
                   <tr>
-                    <th>Tasks: 100</th>
+                    <th>Tasks: {{ todos.length }}</th>
                     <th>Task</th>
                     <th>Date</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <template v-for="(todo, index) in todos">
+                  <template v-for="(todo, index) in filterToDos">
                     <tr :key="index">
                       <td>
                         <v-checkbox
-                          v-model="todo.isDone"
-                          :color="todo.isDone ? 'grey' : ''"
+                          @change="updateToDo({id: todo.id,
+                          isCompleted: todo.isCompleted})"
+                          v-model="todo.isCompleted"
+                          :color="todo.isCompleted ? 'grey' : ''"
+
                         ></v-checkbox>
                       </td>
                       <td>
                         <v-fade-transition leave-absolute>
                           <span
-                            :key="`todo-${todo.isDone}`"
+                            :key="`todo-${todo.id}`"
                             :class="`${
-                              todo.isDone
+                              todo.isCompleted
                                 ? 'text-decoration-line-through'
                                 : 'text-decoration-none'
                             }
                            ${
-                             todo.isDone ? 'grey--text' : 'text-decoration-none'
+                             todo.isCompleted ? 'grey--text' : 'text-decoration-none'
                            } `"
                           >
                             {{ todo.task }}
@@ -80,28 +84,28 @@
                       <td>
                         <v-fade-transition leave-absolute>
                           <span
-                            :key="`todo-${todo.isDone}`"
+                            :key="`todo-${todo.isCompleted}`"
                             :class="`${
-                              todo.isDone
+                              todo.isCompleted
                                 ? 'text-decoration-line-through'
                                 : 'text-decoration-none'
                             }
                            ${
-                             todo.isDone ? 'grey--text' : 'text-decoration-none'
+                             todo.isCompleted ? 'grey--text' : 'text-decoration-none'
                            } `"
                           >
-                            {{ todo.date }}
+                            {{ todo.createdAt }}
                           </span>
                         </v-fade-transition>
                       </td>
                       <td>
                         <v-scroll-x-transition leave-absolute>
-                          <v-btn v-if="todo.isDone" icon>
+                          <v-btn v-if="todo.isCompleted" icon>
                             <v-icon color="success"> mdi-check </v-icon>
                           </v-btn>
                         </v-scroll-x-transition>
                         <v-scroll-x-transition leave-absolute>
-                          <v-btn v-if="!todo.isDone" icon
+                          <v-btn v-if="!todo.isCompleted" icon @click="areYouSure(todo.id)"
                             ><v-icon>mdi-trash-can</v-icon></v-btn
                           >
                         </v-scroll-x-transition>
@@ -119,8 +123,8 @@
       <v-card>
         <v-card-title>New ToDo</v-card-title>
         <v-card-text>
-          <v-text-field filled rounded label="Task"></v-text-field>
-          <v-btn color="primary" block>Add</v-btn>
+          <v-text-field filled rounded label="Task" v-model="newToDo"></v-text-field>
+          <v-btn color="primary"  @click="addToDo" block>Add</v-btn>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -128,15 +132,37 @@
       <v-card>
         <v-card-title>Filter Todos</v-card-title>
         <v-card-text>
-          <v-radio-group>
-            <v-radio label="All"></v-radio>
-            <v-radio label="Completed Tasks"></v-radio>
-            <v-radio label="Pending Tasks"></v-radio>
+          <v-radio-group v-model="toDoFilter">
+            <v-radio value="all" label="All"></v-radio>
+            <v-radio value="completed" label="Completed Tasks"></v-radio>
+            <v-radio value="incomplete" label="Pending Tasks"></v-radio>
           </v-radio-group>
-          <v-btn color="primary" block>Add</v-btn>
+          <v-btn @click="isFilterTodosDialogShow = false" color="primary" block>Confirm</v-btn>
         </v-card-text>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="isSureToDeleteTodo" width="300">
+      <v-card>
+        <v-card-title>Are you sure?</v-card-title>
+        <v-card-actions class="d-flex justify-end">
+          <v-btn @click="deleteToDo()" color="error">Yes</v-btn>
+          <v-btn @click="isSureToDeleteTodo = false" color="normal">No</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-snackbar v-model="openSnackbar" :timeout="timeout">
+      {{ text }}
+      <template v-slot:action="{ attrs }">
+        <v-btn
+                :color="color"
+                text
+                v-bind="attrs"
+                @click="openSnackbar = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </section>
 </template>
 <script>
@@ -162,29 +188,21 @@ const tableHeaders = [
   },
 ];
 
-const dummyTodos = [
-  {
-    id: 1,
-    task: "Task 1",
-    date: "September 9, 2020",
-    isDone: false,
-  },
-
-  {
-    id: 2,
-    task: "Task 2",
-    date: "September 9, 2020",
-    isDone: true,
-  },
-];
-
+import moment from 'moment'
 export default {
   data() {
     return {
-      tableHeaders,
-      todos: dummyTodos,
+      id: 0,
+      text: '',
+      timeout: 2000,
+      color: '',
+      toDoFilter: 'all',
+      newToDo: '',
+      searchInput: '',
       isAddTodoDialogShow: false,
       isFilterTodosDialogShow: false,
+      isSureToDeleteTodo: false,
+      openSnackbar: false
     };
   },
 
@@ -192,6 +210,73 @@ export default {
     log(val) {
       console.log(val);
     },
+    addToDo() {
+      this.$store.dispatch('addToDo', this.newToDo);
+      this.newToDo = '';
+      this.isAddTodoDialogShow = false;
+      this.text = 'You added a new task.'
+      this.color = 'blue';
+      this.openSnackbar = true;
+    },
+    areYouSure(id) {
+      this.isSureToDeleteTodo = true;
+      this.id = id;
+    },
+    deleteToDo() {
+      this.$store.dispatch('deleteToDo', this.id);
+      this.isSureToDeleteTodo = false;
+      this.text = 'You successfully deleted a task.'
+      this.color = 'red';
+      this.openSnackbar = true;
+    },
+    updateToDo(updatedToDo){
+      this.$store.dispatch('updateToDo', updatedToDo);
+    }
   },
+    computed: {
+      filterToDos() {
+        let toDoList = [];
+
+        if (this.toDoFilter === 'all') toDoList = this.todos;
+        if (this.toDoFilter === 'completed') toDoList = this.completedToDos;
+        if (this.toDoFilter === 'incomplete') toDoList = this.inCompleteToDos;
+
+        if (this.searchInput !== '') {
+          toDoList = toDoList.filter(todo => {
+            return todo.task.includes(this.searchInput);
+          });
+        }
+        toDoList.forEach(todo => {
+          todo.createdAt = moment(todo.createdAt).fromNow();
+        });
+
+
+        toDoList.sort((a, b) => {
+          if (a.isCompleted === true && b.isCompleted === false) {
+            return 1;
+          } else if (a.isCompleted === false && b.isCompleted === true) {
+            return -1;
+          } else {
+            return 0;
+          }
+        });
+
+        return toDoList;
+      },
+      todos() {
+        return this.$store.getters.fetchToDos;
+      },
+      completedToDos() {
+          return this.$store.getters.fetchToDos
+                  .filter(todo => todo.isCompleted);
+        },
+      inCompleteToDos() {
+        return this.$store.getters.fetchToDos
+                .filter(todo => !todo.isCompleted);
+      },
+      progressBarPercent() {
+        return (100/this.todos.length) * this.completedToDos.length
+      }
+    }
 };
-</script>
+</script>s

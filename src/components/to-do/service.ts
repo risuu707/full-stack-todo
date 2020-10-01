@@ -13,4 +13,9 @@ export default class ToDoService {
   async deleteToDo(id: number) {
     return await toDoModel.deleteToDo(id);
   }
+
+  async updateToDo(updatedToDo: {id: number, isCompleted: boolean}) {
+    return await toDoModel.updateToDo({id: updatedToDo.id,
+      isCompleted: updatedToDo.isCompleted});
+  }
 }
