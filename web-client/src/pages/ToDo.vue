@@ -54,14 +54,18 @@
                 </thead>
                 <tbody>
                   <template v-for="(todo, index) in filterToDos">
-                    <tr :key="index">
+                    <tr :key="forceRenderKey">
                       <td>
                         <v-checkbox
-                          @change="updateToDo({id: todo.id,
-                          isCompleted: todo.isCompleted})"
+                          key="todo.isCompleted"
+                          @change="
+                            updateToDo({
+                              id: todo.id,
+                              isCompleted: todo.isCompleted,
+                            })
+                          "
                           v-model="todo.isCompleted"
                           :color="todo.isCompleted ? 'grey' : ''"
-
                         ></v-checkbox>
                       </td>
                       <td>
@@ -74,7 +78,9 @@
                                 : 'text-decoration-none'
                             }
                            ${
-                             todo.isCompleted ? 'grey--text' : 'text-decoration-none'
+                             todo.isCompleted
+                               ? 'grey--text'
+                               : 'text-decoration-none'
                            } `"
                           >
                             {{ todo.task }}
@@ -91,7 +97,9 @@
                                 : 'text-decoration-none'
                             }
                            ${
-                             todo.isCompleted ? 'grey--text' : 'text-decoration-none'
+                             todo.isCompleted
+                               ? 'grey--text'
+                               : 'text-decoration-none'
                            } `"
                           >
                             {{ todo.createdAt }}
@@ -105,7 +113,10 @@
                           </v-btn>
                         </v-scroll-x-transition>
                         <v-scroll-x-transition leave-absolute>
-                          <v-btn v-if="!todo.isCompleted" icon @click="areYouSure(todo.id)"
+                          <v-btn
+                            v-if="!todo.isCompleted"
+                            icon
+                            @click="areYouSure(todo.id)"
                             ><v-icon>mdi-trash-can</v-icon></v-btn
                           >
                         </v-scroll-x-transition>
@@ -123,8 +134,13 @@
       <v-card>
         <v-card-title>New ToDo</v-card-title>
         <v-card-text>
-          <v-text-field filled rounded label="Task" v-model="newToDo"></v-text-field>
-          <v-btn color="primary"  @click="addToDo" block>Add</v-btn>
+          <v-text-field
+            filled
+            rounded
+            label="Task"
+            v-model="newToDo"
+          ></v-text-field>
+          <v-btn color="primary" @click="addToDo" block>Add</v-btn>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -137,7 +153,9 @@
             <v-radio value="completed" label="Completed Tasks"></v-radio>
             <v-radio value="incomplete" label="Pending Tasks"></v-radio>
           </v-radio-group>
-          <v-btn @click="isFilterTodosDialogShow = false" color="primary" block>Confirm</v-btn>
+          <v-btn @click="isFilterTodosDialogShow = false" color="primary" block
+            >Confirm</v-btn
+          >
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -153,12 +171,7 @@
     <v-snackbar v-model="openSnackbar" :timeout="timeout">
       {{ text }}
       <template v-slot:action="{ attrs }">
-        <v-btn
-                :color="color"
-                text
-                v-bind="attrs"
-                @click="openSnackbar = false"
-        >
+        <v-btn :color="color" text v-bind="attrs" @click="openSnackbar = false">
           Close
         </v-btn>
       </template>
@@ -188,21 +201,23 @@ const tableHeaders = [
   },
 ];
 
-import moment from 'moment'
+import moment from "moment";
 export default {
   data() {
     return {
+      forceRenderKey: 0,
       id: 0,
-      text: '',
+      text: "",
       timeout: 2000,
-      color: '',
-      toDoFilter: 'all',
-      newToDo: '',
-      searchInput: '',
+      color: "",
+      toDoFilter: "all",
+      newToDo: "",
+      searchInput: "",
       isAddTodoDialogShow: false,
       isFilterTodosDialogShow: false,
       isSureToDeleteTodo: false,
-      openSnackbar: false
+      openSnackbar: false,
+      checked: false,
     };
   },
 
@@ -211,72 +226,78 @@ export default {
       console.log(val);
     },
     addToDo() {
-      this.$store.dispatch('addToDo', this.newToDo);
-      this.newToDo = '';
+      this.$store.dispatch("addToDo", this.newToDo);
+      this.newToDo = "";
       this.isAddTodoDialogShow = false;
-      this.text = 'You added a new task.'
-      this.color = 'blue';
+      this.text = "You added a new task.";
+      this.color = "blue";
       this.openSnackbar = true;
+      this.forceRenderKey += 1;
     },
     areYouSure(id) {
       this.isSureToDeleteTodo = true;
       this.id = id;
+      this.forceRenderKey += 1;
     },
     deleteToDo() {
-      this.$store.dispatch('deleteToDo', this.id);
+      this.$store.dispatch("deleteToDo", this.id);
       this.isSureToDeleteTodo = false;
-      this.text = 'You successfully deleted a task.'
-      this.color = 'red';
+      this.text = "You successfully deleted a task.";
+      this.color = "red";
       this.openSnackbar = true;
+      this.forceRenderKey += 1;
     },
-    updateToDo(updatedToDo){
-      this.$store.dispatch('updateToDo', updatedToDo);
-    }
+    updateToDo(updatedToDo) {
+      this.$store.dispatch("updateToDo", updatedToDo);
+      this.forceRenderKey += 1;
+    },
   },
-    computed: {
-      filterToDos() {
-        let toDoList = [];
+  computed: {
+    filterToDos() {
+      let toDoList = [];
 
-        if (this.toDoFilter === 'all') toDoList = this.todos;
-        if (this.toDoFilter === 'completed') toDoList = this.completedToDos;
-        if (this.toDoFilter === 'incomplete') toDoList = this.inCompleteToDos;
+      if (this.toDoFilter === "all") toDoList = this.todos;
+      if (this.toDoFilter === "completed") toDoList = this.completedToDos;
+      if (this.toDoFilter === "incomplete") toDoList = this.inCompleteToDos;
 
-        if (this.searchInput !== '') {
-          toDoList = toDoList.filter(todo => {
-            return todo.task.includes(this.searchInput);
-          });
-        }
-        toDoList.forEach(todo => {
-          todo.createdAt = moment(todo.createdAt).fromNow();
+      if (this.searchInput !== "") {
+        toDoList = toDoList.filter((todo) => {
+          return todo.task.includes(this.searchInput);
         });
-
-
-        toDoList.sort((a, b) => {
-          if (a.isCompleted === true && b.isCompleted === false) {
-            return 1;
-          } else if (a.isCompleted === false && b.isCompleted === true) {
-            return -1;
-          } else {
-            return 0;
-          }
-        });
-
-        return toDoList;
-      },
-      todos() {
-        return this.$store.getters.fetchToDos;
-      },
-      completedToDos() {
-          return this.$store.getters.fetchToDos
-                  .filter(todo => todo.isCompleted);
-        },
-      inCompleteToDos() {
-        return this.$store.getters.fetchToDos
-                .filter(todo => !todo.isCompleted);
-      },
-      progressBarPercent() {
-        return (100/this.todos.length) * this.completedToDos.length
       }
-    }
+      toDoList.forEach((todo) => {
+        todo.createdAt = moment(todo.createdAt).fromNow();
+      });
+
+      return toDoList;
+    },
+    todos() {
+      return this.$store.getters.fetchToDos.sort((a, b) => {
+        if (a.isCompleted === true && b.isCompleted === false) {
+          return 1;
+        }
+        if (a.isCompleted === false && b.isCompleted === true) {
+          return -1;
+        }
+        if (
+          (a.isCompleted === true && b.isCompleted === true) ||
+          (a.isCompleted === false && b.isCompleted === false)
+        ) {
+          return 0;
+        }
+      });
+    },
+    completedToDos() {
+      return this.$store.getters.fetchToDos.filter((todo) => todo.isCompleted);
+    },
+    inCompleteToDos() {
+      return this.$store.getters.fetchToDos.filter((todo) => !todo.isCompleted);
+    },
+    progressBarPercent() {
+      return (100 / this.todos.length) * this.completedToDos.length;
+    },
+  },
+  watch: {},
 };
-</script>s
+</script>
+s
